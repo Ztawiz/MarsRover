@@ -11,7 +11,6 @@ This is a test program for the Mars Rover to see if the stepper motors, its driv
 #define HFstepPin PD3             // Pin 3 etc...
 #define VBstepPin PD4
 #define HBstepPin PD5
-#define SleepPIn PD6              // För att motorerna ej ska starta i förväg sätter vi denna till Sleep och den måste bli hög innan vi kan köra.
 */
 
 #define stepDelay 4
