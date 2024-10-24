@@ -32,8 +32,10 @@ const float c = 263.5;                         // Distance in mm between the for
 const float f = 335.3;                         // Distance in mm between the backward motors.
 
 int16_t position[4] = {0,0,0,0};      // The current position of the stepper motors. {Left Forward, RF, LB, RB}
-int16_t aim[4] = {0,0,0,0};           // The position we are aiming to turn towards.
+//int16_t aim[4] = {0,0,0,0};           // The position we are aiming to turn towards.
 int8_t TurnDegree = -20;              // This is just a test radius before we start using the pot.
+
+void getAim(int16_t *arr);
 
 void setup() {
   DDRD |= B00111100;                  // High = Output. All StepPins output.
@@ -45,21 +47,43 @@ void setup() {
 }
 
 void loop() {
-  if (TurnDegree <= 44){                                                                // This means left turn.
-    uint16_t d = (uint16_t)(a / tan(abs(TurnDegree) * PI / 180.0));        // Calculate d for future calculations. Code gets too messy without this step. tan() only uses radians.
-    debug("abs of turndegree: ");
-    debugln(abs(TurnDegree));
-    debug("d: ");
-    debugln(d);
-    aim[0] = (int16_t)((TurnDegree/0.9)*4);                                                        // The currect position.
-    debug("#44 - aim 0 is: ");
-    debugln(aim[0]);
-    aim[1] = (int16_t)((atan(a/(c+d))*(180.0/PI))/0.9*4);                                                   // The (hopefully) currect position.
-    debug("#53 - aim 1 is: ");
-    debugln(aim[1]);
-    debugln(" ");
+  int16_t aim[4] = {0,0,0,0};                                                         // The position we are aiming to turn towards.
+  // TurnDegree = analogRead(A5);
 
-    delay(5000);
-  }
+  getAim(aim);
+  
+  uint16_t d = (uint16_t)(a / tan(abs(TurnDegree) * PI / 180.0));                     // Calculate d for future calculations. Code gets too messy without this step. tan() only uses radians.
+  debug("d: ");
+  debugln(d);
+  //aim[0] = (int16_t)((TurnDegree/0.9)*4);                                             // The currect position.
+  debug("#44 - aim 0 is: ");
+  debugln(aim[0]);
+  //aim[1] = (int16_t)((atan(a/(c+d))*(180.0/PI))/0.9*4);                               // The (hopefully) currect position.
+  debug("#53 - aim 1 is: ");
+  debugln(aim[1]);
+  //aim[2] = (int16_t)((atan(b/d)*(180.0/PI))/0.9*4);
+  debug("#59 - aim 2 is: ");
+  debugln(aim[2]);
+  //aim[3] = (int16_t)((atan(b/(f+d))*(180.0/PI))/0.9*4);
+  debug("#61 - aim 3 is: ");
+  debugln(aim[3]);
 
+  debugln(" ");
+
+  delay(5000);
+  
+
+}
+
+void getAim(int16_t *arr){
+  uint16_t d = (uint16_t)(a / tan(abs(TurnDegree) * PI / 180.0));                     // Calculate d for future calculations. Code gets too messy without this step. tan() only uses radians.
+ 
+  arr[0] = (int16_t)((TurnDegree/0.9)*4);                                             // The currect position.
+  
+  arr[1] = (int16_t)((atan(a/(c+d))*(180.0/PI))/0.9*4);                               // The (hopefully) currect position.
+  
+  arr[2] = (int16_t)((atan(b/d)*(180.0/PI))/0.9*4);
+  
+  arr[3] = (int16_t)((atan(b/(f+d))*(180.0/PI))/0.9*4);
+  
 }
