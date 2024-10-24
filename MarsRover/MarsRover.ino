@@ -15,23 +15,51 @@ This is a test program for the Mars Rover to see if the stepper motors, its driv
 
 The scope for d is 317 mm to 1700 mm, which is 1 degree to 45 degrees for the forward inner wheel.
 */
+#define DEBUG 1
 
-#define stepDelay 4
-#define turnValue 400
+#if DEBUG == 1
+#define debug(x) Serial.print(x)      // 
+#define debugln(x) Serial.println(x)
+#else
+#define debug(x)
+#define debugln(x)
+#endif
 
-uint16_t position[4] = {0,0,0,0};   // The current position of the stepper motors. {Left Forward, RF, LB, RB}
-uint16_t aim[4] = {0,0,0,0};        // The position we are aiming to turn towards.
+#define stepDelay 4                   // Delay between steps. Might be used as delay in our polling.
+const float a = 317.18;                         // Distance in mm from turning axis to the forward motors.
+const float b = 280.36;                         // Distance in mm from turning axis to the backward motors.
+const float c = 263.5;                         // Distance in mm between the forward motors.
+const float f = 335.3;                         // Distance in mm between the backward motors.
 
+int16_t position[4] = {0,0,0,0};      // The current position of the stepper motors. {Left Forward, RF, LB, RB}
+int16_t aim[4] = {0,0,0,0};           // The position we are aiming to turn towards.
+int8_t TurnDegree = -20;              // This is just a test radius before we start using the pot.
 
 void setup() {
-  DDRD |= B00111100;                // High = Output. All StepPins output.
-  DDRC |= B00001111;                // All dirPins output.
-  DDRC &= B11101111;                // A5, potPin as input.
-  PORTD &= B11000011;               // All step pins low.
+  DDRD |= B00111100;                  // High = Output. All StepPins output.
+  DDRC |= B00001111;                  // All dirPins output.
+  DDRC &= B11101111;                  // A5, potPin as input.
+  PORTD &= B11000011;                 // All step pins low.
+  Serial.begin(9600);                 // Start serial communication at 9600 baud
 
 }
 
 void loop() {
-  // put your main code here, to run repeatedly:
+  if (TurnDegree <= 44){                                                                // This means left turn.
+    uint16_t d = (uint16_t)(a / tan(abs(TurnDegree) * PI / 180.0));        // Calculate d for future calculations. Code gets too messy without this step. tan() only uses radians.
+    debug("abs of turndegree: ");
+    debugln(abs(TurnDegree));
+    debug("d: ");
+    debugln(d);
+    aim[0] = (int16_t)((TurnDegree/0.9)*4);                                                        // The currect position.
+    debug("#44 - aim 0 is: ");
+    debugln(aim[0]);
+    aim[1] = (int16_t)((atan(a/(c+d))*(180.0/PI))/0.9*4);                                                   // The (hopefully) currect position.
+    debug("#53 - aim 1 is: ");
+    debugln(aim[1]);
+    debugln(" ");
+
+    delay(5000);
+  }
 
 }
