@@ -32,58 +32,81 @@ const float c = 263.5;                         // Distance in mm between the for
 const float f = 335.3;                         // Distance in mm between the backward motors.
 
 int16_t position[4] = {0,0,0,0};      // The current position of the stepper motors. {Left Forward, RF, LB, RB}
-//int16_t aim[4] = {0,0,0,0};           // The position we are aiming to turn towards.
-int8_t TurnDegree = -20;              // This is just a test radius before we start using the pot.
 
-void getAim(int16_t *arr);
+void getAim(int16_t *arr, int8_t turnd);
 
 void setup() {
   DDRD |= B00111100;                  // High = Output. All StepPins output.
-  DDRC |= B00001111;                  // All dirPins output.
-  DDRC &= B11101111;                  // A5, potPin as input.
+  DDRC |= B00001110;                  // All dirPins output. excpet A0 for pot testing
+  DDRC &= B11111110;                  // A0, potPin as input for pot. (Pro mini)
   PORTD &= B11000011;                 // All step pins low.
+  DDRB |= B00000010;                  // Pin 9 output for voltage to pot.
+  PORTB |= B00000010;
   Serial.begin(9600);                 // Start serial communication at 9600 baud
 
 }
 
 void loop() {
-  int16_t aim[4] = {0,0,0,0};                                                         // The position we are aiming to turn towards.
-  // TurnDegree = analogRead(A5);
+  int16_t aim[4] = {0,0,0,0};                                         // The position we are aiming to turn towards.
+  int8_t TurnDegree = map(analogRead(A0), 0, 1018, -45, 45);          // Reads A0 and maps it to suitable turning degrees. limited to 1018 do give bigger range for the 45 value.
 
-  getAim(aim);
   
-  uint16_t d = (uint16_t)(a / tan(abs(TurnDegree) * PI / 180.0));                     // Calculate d for future calculations. Code gets too messy without this step. tan() only uses radians.
-  debug("d: ");
-  debugln(d);
-  //aim[0] = (int16_t)((TurnDegree/0.9)*4);                                             // The currect position.
+  getAim(aim, TurnDegree);                                            // This is just a test radius before we start using the pot.
+  
+  debug("TurnDegree: ");
+  debugln(TurnDegree);
   debug("#44 - aim 0 is: ");
   debugln(aim[0]);
-  //aim[1] = (int16_t)((atan(a/(c+d))*(180.0/PI))/0.9*4);                               // The (hopefully) currect position.
   debug("#53 - aim 1 is: ");
   debugln(aim[1]);
-  //aim[2] = (int16_t)((atan(b/d)*(180.0/PI))/0.9*4);
   debug("#59 - aim 2 is: ");
   debugln(aim[2]);
-  //aim[3] = (int16_t)((atan(b/(f+d))*(180.0/PI))/0.9*4);
   debug("#61 - aim 3 is: ");
   debugln(aim[3]);
+  debug("analogA0 is: ");
+  debugln(analogRead(A0));
 
   debugln(" ");
 
-  delay(5000);
+  delay(1000);
   
 
 }
 
-void getAim(int16_t *arr){
-  uint16_t d = (uint16_t)(a / tan(abs(TurnDegree) * PI / 180.0));                     // Calculate d for future calculations. Code gets too messy without this step. tan() only uses radians.
+void getAim(int16_t *arr, int8_t turnd){
+
+  if (turnd == 0){
+    return;
+  }
+
+  uint16_t d = (uint16_t)(a / tan(abs(turnd) * PI / 180.0));                     // Calculate d for future calculations. Code gets too messy without this step. tan() only uses radians.
+  debug("d: ");
+  debugln(d);
  
-  arr[0] = (int16_t)((TurnDegree/0.9)*4);                                             // The currect position.
+  arr[0] = (int16_t)((turnd/0.9)*4);                                             // The currect position.
   
-  arr[1] = (int16_t)((atan(a/(c+d))*(180.0/PI))/0.9*4);                               // The (hopefully) currect position.
+  arr[1] = (int16_t)((atan(a/(c+d))*(180.0/PI))/0.9*4);                          // The (hopefully) currect position.
   
   arr[2] = (int16_t)((atan(b/d)*(180.0/PI))/0.9*4);
   
   arr[3] = (int16_t)((atan(b/(f+d))*(180.0/PI))/0.9*4);
+
   
+  if (turnd < 0){
+    arr[1] = -arr[1];
+  } else {
+    arr[2] = -arr[2];
+    arr[3] = -arr[3];
+  }
+  
+  if (turnd > 0){
+    int16_t temp = arr[0];
+    arr[0] = arr[1];
+    arr[1] = temp;
+
+    temp = arr[2];
+    arr[2] = arr[3];
+    arr[3] = temp;
+  }
+
 }
