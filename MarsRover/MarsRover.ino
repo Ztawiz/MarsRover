@@ -18,7 +18,7 @@ The scope for d is 317 mm to 1700 mm, which is 1 degree to 45 degrees for the fo
 #define DEBUG 1
 
 #if DEBUG == 1
-#define debug(x) Serial.print(x)      // 
+#define debug(x) Serial.print(x)      // This way we can remove all serial prints easily. Thanks, pre-processor.
 #define debugln(x) Serial.println(x)
 #else
 #define debug(x)
@@ -31,9 +31,19 @@ const float b = 280.36;                         // Distance in mm from turning a
 const float c = 263.5;                         // Distance in mm between the forward motors.
 const float f = 335.3;                         // Distance in mm between the backward motors.
 
-int16_t position[4] = {0,0,0,0};      // The current position of the stepper motors. {Left Forward, RF, LB, RB}
+struct Positions{
+  int16_t front_left_motor;
+  int front_right_motor;
+  int back_left_motor;
+  int back_right_motor;
+  int currentAngle;
+
+};
+Positions positions;
+
 
 void getAim(int16_t *arr, int8_t turnd);
+void stepMotors(int8_t turnd);
 
 void setup() {
   DDRD |= B00111100;                  // High = Output. All StepPins output.
@@ -47,29 +57,14 @@ void setup() {
 }
 
 void loop() {
-  int16_t aim[4] = {0,0,0,0};                                         // The position we are aiming to turn towards.
-  int8_t TurnDegree = map(analogRead(A0), 0, 1018, -45, 45);          // Reads A0 and maps it to suitable turning degrees. limited to 1018 do give bigger range for the 45 value.
+  int8_t targetAngle = map(analogRead(A0), 0, 1018, -45, 45);          // Reads A0 and maps it to suitable turning degrees. limited to 1018 do give bigger range for the 45 value.
+                                                                      // This is the turning degree the pot tells us to go.
+  
+  
+  stepMotors(targetAngle);
 
   
-  getAim(aim, TurnDegree);                                            // This is just a test radius before we start using the pot.
-  
-  debug("TurnDegree: ");
-  debugln(TurnDegree);
-  debug("#44 - aim 0 is: ");
-  debugln(aim[0]);
-  debug("#53 - aim 1 is: ");
-  debugln(aim[1]);
-  debug("#59 - aim 2 is: ");
-  debugln(aim[2]);
-  debug("#61 - aim 3 is: ");
-  debugln(aim[3]);
-  debug("analogA0 is: ");
-  debugln(analogRead(A0));
-
-  debugln(" ");
-
   delay(1000);
-  
 
 }
 
@@ -82,15 +77,10 @@ void getAim(int16_t *arr, int8_t turnd){
   uint16_t d = (uint16_t)(a / tan(abs(turnd) * PI / 180.0));                     // Calculate d for future calculations. Code gets too messy without this step. tan() only uses radians.
   debug("d: ");
   debugln(d);
- 
   arr[0] = (int16_t)((turnd/0.9)*4);                                             // The currect position.
-  
   arr[1] = (int16_t)((atan(a/(c+d))*(180.0/PI))/0.9*4);                          // The (hopefully) currect position.
-  
   arr[2] = (int16_t)((atan(b/d)*(180.0/PI))/0.9*4);
-  
   arr[3] = (int16_t)((atan(b/(f+d))*(180.0/PI))/0.9*4);
-
   
   if (turnd < 0){
     arr[1] = -arr[1];
@@ -108,5 +98,33 @@ void getAim(int16_t *arr, int8_t turnd){
     arr[2] = arr[3];
     arr[3] = temp;
   }
+}
+
+void stepMotors(int8_t turnd){
+  int16_t aim[4] = {0,0,0,0};                                         // The position we are aiming to turn towards.
+
+  if (turnd < positions.currentAngle){                                // If targetAngle is less than currentAngle, we need decrease out angle by 1 and thus need the aim for currentAngle-1.
+    getAim(aim, positions.currentAngle-1);
+  } else if (turnd > positions.currentAngle){
+    getAim(aim, positions.currentAngle+1);
+  } else return;
+
+  
+  
+
+  debug("targetAngle: ");
+  debugln(turnd);
+  debug("aim 0 is: ");
+  debugln(aim[0]);
+  debug("aim 1 is: ");
+  debugln(aim[1]);
+  debug("aim 2 is: ");
+  debugln(aim[2]);
+  debug("aim 3 is: ");
+  debugln(aim[3]);
+  debug("analogA0 is: ");
+  debugln(analogRead(A0));
+
+  debugln(" ");
 
 }
